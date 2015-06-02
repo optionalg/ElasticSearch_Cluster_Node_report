@@ -32,33 +32,39 @@ Usage: esNodeReport.py {req_search_rejected | req_index_rejected | cache_evictio
 class ESNodeReport:
     def __init__(self, arg):
         self.arg = arg
-        self.cluster = "http://localhost:9200/_cluster/stats"
-        self.nodes = "http://localhost:9200/_nodes/_local/stats"
+        self.cluster = "http://localpriv:9200/_cluster/stats"
+        self.nodes = "http://localpriv:9200/_nodes/_local/stats"
+        self.clusterResponse = {}
+        self.nodeResponse = {}
 
     def getClusterStatus(self):
         response = requests.get(self.cluster) # Send GET request
-        decodedJson = response.json()
-        return decodedJson
+        self.clusterResponse = response.json()
 
     def getNodesStatus(self):
         response = requests.get(self.nodes) # Send GET request
-        decodedJson = response.json()
-        return decodedJson
+        self.nodeResponse = response.json()
 
-    def get_fs_total_free_in_bytes(self, inputs): # parsing JSON
-        return inputs['fs']['total']['free_in_bytes']  # Return Bytes
+    def get_fs_total_free_in_bytes(self): # parsing JSON
+        return self.clusterResponse['nodes']['fs']['free_in_bytes']  # Return Bytes
 
-    def get_indices_filter_cache_evictions(self, inputs): # parsing JSON
-        return inputs['indices']['filter_cache']['evictions'] # Return Integer
+    def get_indices_filter_cache_evictions(self): # parsing JSON
+        return self.clusterResponse['indices']['filter_cache']['evictions'] # Return Integer
 
-    def get_indices_fielddata_memory_size_in_bytes(self, inputs): # parsing JSON
-        return inputs['indices']['fielddata']['memory_size_in_bytes'] # Return Bytes
+    def get_indices_fielddata_memory_size_in_bytes(self): # parsing JSON
+        return self.clusterResponse['indices']['fielddata']['memory_size_in_bytes'] # Return Bytes
 
-    def get_thread_pool_index_rejected(self, inputs): # parsing JSON
-        return inputs['nodes']['thread_pool']['index']['rejected'] # Return Integer
+    def get_thread_pool_index_rejected(self): # parsing JSON
+        self.nodeResponse['nodes'].keys()
+        key = self.nodeResponse['nodes'].keys()
+        node = key[0]
+        return self.nodeResponse['nodes'][node]['thread_pool']['index']['rejected'] # Return Integer
 
-    def get_thread_pool_search_rejected(self, inputs): # parsing JSON
-        return inputs['nodes']['thread_pool']['search']['rejected']
+    def get_thread_pool_search_rejected(self): # parsing JSON
+        self.nodeResponse['nodes'].keys()
+        key = self.nodeResponse['nodes'].keys()
+        node = key[0]
+        return self.nodeResponse['nodes'][node]['thread_pool']['search']['rejected']
 
 if __name__ == "__main__":
 
@@ -70,27 +76,27 @@ if __name__ == "__main__":
         sys.exit()
 
     digger = ESNodeReport(argument) # Makes new instance
-    clusterDecodedJson = digger.getClusterStatus() # Get info from cluster url
-    nodesDecodedJson = digger.getNodesStatus() # Get info from nodes url
+    digger.getClusterStatus() # Get info from cluster url
+    digger.getNodesStatus() # Get info from nodes url
 
     if argument == "req_search_rejected": # Single Node Info
-        thread_pool_search_rejected = digger.get_thread_pool_search_rejected(nodesDecodedJson)
+        thread_pool_search_rejected = digger.get_thread_pool_search_rejected()
         print thread_pool_search_rejected
 
     elif argument == "req_index_rejected": # Single Node Info
-        thread_pool_index_rejected = digger.get_thread_pool_index_rejected(nodesDecodedJson)
+        thread_pool_index_rejected = digger.get_thread_pool_index_rejected()
         print thread_pool_index_rejected
 
     elif argument == "cache_evictions": # Cluster Info
-        indices_filter_cache_evictions = digger.get_indices_filter_cache_evictions(clusterDecodedJson)
+        indices_filter_cache_evictions = digger.get_indices_filter_cache_evictions()
         print indices_filter_cache_evictions
 
     elif argument == "fieldata_size": # Cluster Info
-        indices_fielddata_memory_size_in_bytes = digger.get_indices_fielddata_memory_size_in_bytes(clusterDecodedJson)
+        indices_fielddata_memory_size_in_bytes = digger.get_indices_fielddata_memory_size_in_bytes()
         print indices_fielddata_memory_size_in_bytes
 
     elif argument == "free_space": # Cluster Info
-        get_fs_total_free_in_bytes = digger.get_indices_filter_cache_evictions(clusterDecodedJson)
+        get_fs_total_free_in_bytes = digger.get_fs_total_free_in_bytes()
         print get_fs_total_free_in_bytes
 
     else:
